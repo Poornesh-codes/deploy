@@ -238,9 +238,24 @@
     </div>
 
     <script>
+        function getSiteBasePath() {
+            let path = window.location.pathname;
+            if (path.endsWith('/')) {
+                path = path.slice(0, -1);
+            }
+            const lastSegment = path.substring(path.lastIndexOf('/') + 1);
+            const isFile = lastSegment.includes('.');
+            return isFile ? (path.substring(0, path.lastIndexOf('/')) || '') : path;
+        }
+
+        function resolvePath(url) {
+            const basePath = getSiteBasePath();
+            return basePath ? `${basePath}${url}` : url;
+        }
+
         async function fetchMetrics() {
             try {
-                const response = await fetch('/api/metrics');
+                const response = await fetch(resolvePath('/api/metrics'));
                 const data = await response.json();
                 updateUI(data);
             } catch (error) {
@@ -253,7 +268,7 @@
             loader.style.display = 'block';
             
             try {
-                const response = await fetch('/api/run');
+                const response = await fetch(resolvePath('/api/run'));
                 const data = await response.json();
                 // Since api_run returns full results, we can just use it or fetch metrics
                 fetchMetrics();
