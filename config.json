@@ -1,0 +1,10 @@
+{
+    "weights": {
+        "delivery_time": 0.30,
+        "sla_urgency": 0.30,
+        "workload_fairness": 0.20,
+        "priority_boost": 0.10,
+        "agent_rating": 0.10
+    },
+    "travel_speed_factor": 1.0
+}

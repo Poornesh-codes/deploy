@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Delivery Dispatch Dashboard</title>
+    <!-- Use Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --panel-bg: #1e293b;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --accent-blue: #3b82f6;
+            --accent-green: #10b981;
+            --accent-red: #ef4444;
+            --accent-yellow: #f59e0b;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 20px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #334155;
+        }
+
+        h1 {
+            font-weight: 800;
+            margin: 0;
+            background: linear-gradient(90deg, #60a5fa, #3b82f6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .btn {
+            background-color: var(--accent-blue);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            background-color: #2563eb;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .panel {
+            background-color: var(--panel-bg);
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .panel h2 {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 10px;
+            background-color: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+        }
+
+        .metric .label {
+            font-weight: 400;
+        }
+
+        .metric .value {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .value.good { color: var(--accent-green); }
+        .value.warning { color: var(--accent-yellow); }
+        .value.bad { color: var(--accent-red); }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #334155;
+        }
+
+        th {
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+
+        .loader {
+            border: 4px solid var(--panel-bg);
+            border-top: 4px solid var(--accent-blue);
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            display: none;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Smart Delivery Dispatch</h1>
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <div id="loader" class="loader"></div>
+            <button class="btn" onclick="runSimulation()">Run Simulation</button>
+        </div>
+    </header>
+
+    <div class="dashboard-grid">
+        <!-- Overview Panel -->
+        <div class="panel">
+            <h2>System Overview</h2>
+            <div class="metric">
+                <span class="label">Total Orders</span>
+                <span class="value" id="total_orders">-</span>
+            </div>
+            <div class="metric">
+                <span class="label">Total Agents</span>
+                <span class="value" id="total_agents">-</span>
+            </div>
+            <div class="metric">
+                <span class="label">Simulation Time</span>
+                <span class="value" id="sim_time">-</span>
+            </div>
+        </div>
+
+        <!-- SLA Compliance Panel -->
+        <div class="panel">
+            <h2>SLA Compliance</h2>
+            <div class="metric">
+                <span class="label">Compliance Rate</span>
+                <span class="value" id="compliance_rate">-</span>
+            </div>
+            <div class="metric">
+                <span class="label">Violations</span>
+                <span class="value bad" id="violations">-</span>
+            </div>
+            <div class="metric">
+                <span class="label">Avg Margin</span>
+                <span class="value" id="avg_margin">-</span>
+            </div>
+        </div>
+
+        <!-- Delivery Time Panel -->
+        <div class="panel">
+            <h2>Delivery Time</h2>
+            <div class="metric">
+                <span class="label">Overall Avg</span>
+                <span class="value" id="avg_delivery">-</span>
+            </div>
+            <div class="metric">
+                <span class="label">High Priority Avg</span>
+                <span class="value warning" id="high_priority_avg">-</span>
+            </div>
+            <div class="metric">
+                <span class="label">Low Priority Avg</span>
+                <span class="value good" id="low_priority_avg">-</span>
+            </div>
+        </div>
+
+        <!-- Workload Fairness -->
+        <div class="panel">
+            <h2>Workload Fairness</h2>
+            <div class="metric">
+                <span class="label">Mean Assignments</span>
+                <span class="value" id="mean_assignments">-</span>
+            </div>
+            <div class="metric">
+                <span class="label">Variance</span>
+                <span class="value" id="workload_variance">-</span>
+            </div>
+            <div class="metric">
+                <span class="label">Max Spread</span>
+                <span class="value" id="workload_range">-</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Assignments Table -->
+    <div class="panel" style="overflow-x: auto;">
+        <h2>Recent Deliveries</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Order ID</th>
+                    <th>Priority</th>
+                    <th>Agent</th>
+                    <th>Delivery Time</th>
+                    <th>SLA Margin</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody id="deliveries_table">
+                <!-- Populated via JS -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        async function fetchMetrics() {
+            try {
+                const response = await fetch('/api/metrics');
+                const data = await response.json();
+                updateUI(data);
+            } catch (error) {
+                console.error("Failed to fetch metrics:", error);
+            }
+        }
+
+        async function runSimulation() {
+            const loader = document.getElementById('loader');
+            loader.style.display = 'block';
+            
+            try {
+                const response = await fetch('/api/run');
+                const data = await response.json();
+                // Since api_run returns full results, we can just use it or fetch metrics
+                fetchMetrics();
+            } catch (error) {
+                console.error("Simulation failed:", error);
+                alert("Simulation failed. Check console.");
+            } finally {
+                loader.style.display = 'none';
+            }
+        }
+
+        function updateUI(data) {
+            if (!data || !data.simulation) return;
+
+            // Overview
+            document.getElementById('total_orders').textContent = data.simulation.total_orders;
+            document.getElementById('total_agents').textContent = data.simulation.total_agents;
+            document.getElementById('sim_time').textContent = data.simulation.simulation_time_seconds + ' s';
+
+            // SLA Compliance
+            const sla = data.metrics.sla_compliance;
+            const compRate = document.getElementById('compliance_rate');
+            compRate.textContent = sla.compliance_rate_percent + '%';
+            compRate.className = `value ${sla.compliance_rate_percent > 90 ? 'good' : (sla.compliance_rate_percent > 70 ? 'warning' : 'bad')}`;
+            
+            document.getElementById('violations').textContent = sla.violations;
+            document.getElementById('avg_margin').textContent = sla.margin.mean.toFixed(1) + ' min';
+
+            // Delivery Time
+            const dt = data.metrics.delivery_time;
+            document.getElementById('avg_delivery').textContent = dt.overall.mean.toFixed(1) + ' min';
+            document.getElementById('high_priority_avg').textContent = 
+                (dt.by_priority.HIGH ? dt.by_priority.HIGH.mean.toFixed(1) : '-') + ' min';
+            document.getElementById('low_priority_avg').textContent = 
+                (dt.by_priority.LOW ? dt.by_priority.LOW.mean.toFixed(1) : '-') + ' min';
+
+            // Workload Fairness
+            const wl = data.workload;
+            document.getElementById('mean_assignments').textContent = wl.mean.toFixed(1);
+            document.getElementById('workload_variance').textContent = wl.variance.toFixed(2);
+            document.getElementById('workload_range').textContent = wl.range;
+            
+            // We can fetch full results to populate the table if we want, 
+            // but for now, we'll fetch full results using /api/run
+            fetchFullResultsForTable();
+        }
+
+        async function fetchFullResultsForTable() {
+            try {
+                const response = await fetch('/api/run');
+                const data = await response.json();
+                
+                const tbody = document.getElementById('deliveries_table');
+                tbody.innerHTML = '';
+                
+                if (data.metrics && data.metrics.deliveries) {
+                    // Take last 10 deliveries
+                    const recent = data.metrics.deliveries.slice(-10).reverse();
+                    
+                    recent.forEach(d => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${d.order_id}</td>
+                            <td>${d.priority}</td>
+                            <td>${d.agent}</td>
+                            <td>${d.delivery_time} min</td>
+                            <td class="${d.sla_margin >= 0 ? 'good' : 'bad'}">${d.sla_margin} min</td>
+                            <td>${d.sla_violated ? '<span style="color:var(--accent-red)">Violated</span>' : '<span style="color:var(--accent-green)">Met</span>'}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        // Load initially
+        fetchMetrics();
+    </script>
+</body>
+</html>
