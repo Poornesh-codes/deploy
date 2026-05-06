@@ -12,6 +12,12 @@ from src.data_loader import load_all_data
 from src.simulator import Simulator
 
 app = Flask(__name__)
+
+# Frozen Flask configuration
+app.config['FREEZER_DESTINATION'] = 'build'
+app.config['FREEZER_RELATIVE_URLS'] = True
+app.config['FREEZER_STATIC_IGNORE_404'] = True
+
 project_dir = Path(__file__).parent
 data_dir = project_dir / 'data' / 'raw'
 config_path = project_dir / 'config.json'
